@@ -1,0 +1,48 @@
+ <form method="post" action="" class="compressedform">
+    <span>
+        <input type="submit" name="compresszip" class="customFormbut bottom15" value="Download zip file">
+    </span>
+</form>
+<?php
+if($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['compresszip']))
+{
+
+    global $upload_root;
+    $upload_root = GFFormsModel::get_upload_root();
+    $get_converted_pdf_file = $upload_root . 'entry_' . $entry_data['id'] . '/';
+    $zip_file_path =  $upload_root . 'entry_' . $entry_data['id'].'-compressed.zip';
+    if(file_exists($get_converted_pdf_file)){ 
+        $zip_file = new ZipArchive();
+            if($zip_file->open($zip_file_path, ZipArchive::CREATE | ZipArchive::OVERWRITE) === TRUE)
+            {
+                $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($get_converted_pdf_file), RecursiveIteratorIterator::LEAVES_ONLY);       
+                foreach ($files as $file) {
+                    if (!$file->isDir()) { 
+                        $file->getRealPath() . "\n";
+            
+                        $relativePath = substr($file->getRealPath(), strlen($get_converted_pdf_file));
+                    
+                        $zip_file->addFile($file->getRealPath(), $relativePath);
+                    }
+                }
+
+                // // Close the ZIP archive
+                $zip_file->close();
+                if (file_exists($zip_file_path)) {
+                    header('Content-Type: application/zip');
+                    header('Content-Disposition: attachment; filename="' . basename($zip_file_path) . '"');
+                    header('Content-Length: ' . filesize($zip_file_path));
+                    readfile($zip_file_path);
+                }
+                else{
+
+                    echo 'Couldnt download zip file';
+                }
+            }
+            else{
+                echo 'folder compressed successfully';
+            }
+    }
+   
+
+}
